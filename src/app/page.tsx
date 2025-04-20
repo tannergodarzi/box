@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./page.module.css";
-import { createTimer, Timer } from "../utilities/timing";
+import { createTimer, Timer, forceRestartTimer } from "../utilities/timing";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { ProgressBar } from "./components/progressBar";
 
@@ -10,16 +10,16 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [playing, setPlaying] = useState(false);
   const timerRef = useRef<Timer | null>(null);
-  const playingRef = useRef<boolean>(false);
+  const playingRef = useRef(false);
   
-  // Update the ref when playing state changes
+  // Keep track of the playing state for use in callbacks
   useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
   
   // Create the timer only once
   useEffect(() => {
-    timerRef.current = createTimer({
+    const timer = createTimer({
       duration: 4000,
       onUpdate: (progress) => {
         setProgress(Math.ceil(progress * 100));
@@ -27,20 +27,21 @@ export default function Home() {
       onComplete: () => {
         setStep((step) => step < 4 ? step + 1 : 1);
         
-        // Use the ref to access the current playing state
+        // Use the force restart helper to ensure proper restart
         if (playingRef.current && timerRef.current) {
-          timerRef.current.restart();
+          forceRestartTimer(timerRef.current);
         }
       },
     });
     
+    timerRef.current = timer;
+    
     return () => {
-      // Cleanup on unmount
       if (timerRef.current) {
         timerRef.current.stop();
       }
     };
-  }, []);
+  }, []); // Empty dependency array ensures timer is created only once
   
   // Handle play state changes
   useEffect(() => {
@@ -55,31 +56,25 @@ export default function Home() {
   
   // Start automatically on mount
   useLayoutEffect(() => {
-    setPlaying(true);
+    setTimeout(() => {
+      setPlaying(true);
+    }, 100);
   }, []);
-
-  function handleOnButtonClickStop() {
-    setPlaying(false);
-  }
-
-  function handleOnButtonClickStart() {
-    setPlaying(true);
-  }
   
   return (
     <div className={styles.page}>
       <main className={styles.main}>
         <h1>Box Breather</h1>
         <h2>{`Progress ${progress}%`}</h2>
-        <h2>{`Step ${step}`}</h2>
+        <h2>{`Step ${step} of 4`}</h2>
         <div>
           <ProgressBar width={progress * 4} paused={!playing} />
         </div>
         <div className={styles.controls}>
-          <button onClick={handleOnButtonClickStop} disabled={!playing}>
+          <button onClick={() => setPlaying(false)} disabled={!playing}>
             Stop
           </button>
-          <button onClick={handleOnButtonClickStart} disabled={playing}>
+          <button onClick={() => setPlaying(true)} disabled={playing}>
             Start
           </button>
         </div>

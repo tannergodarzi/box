@@ -18,6 +18,9 @@ export interface TimerOptions {
   onComplete?: () => void;
 }
 
+/**
+ * High-precision timer using requestAnimationFrame
+ */
 export class Timer {
   private startTime: number = 0;
   private rafId: number | null = null;
@@ -25,6 +28,7 @@ export class Timer {
   private duration: number;
   private onUpdate?: (progress: number) => void;
   private onComplete?: () => void;
+  private completingCycle: boolean = false;
 
   constructor(options: TimerOptions = {}) {
     this.duration = options.duration || 1000;
@@ -36,20 +40,25 @@ export class Timer {
    * Starts the timer
    */
   start(): void {
+    console.log('Timer start called, isRunning:', this.isRunning);
     if (this.isRunning) return;
     
     this.isRunning = true;
     this.startTime = performance.now();
+    this.completingCycle = false;
     this.tick();
+    console.log('Timer started at', this.startTime);
   }
 
   /**
    * Stops the timer
    */
   stop(): void {
+    console.log('Timer stop called, isRunning:', this.isRunning);
     if (!this.isRunning) return;
     
     this.isRunning = false;
+    this.completingCycle = false;
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
@@ -60,6 +69,7 @@ export class Timer {
    * Resets and restarts the timer
    */
   restart(): void {
+    console.log('Timer restart called, isRunning:', this.isRunning);
     this.stop();
     this.start();
   }
@@ -68,7 +78,10 @@ export class Timer {
    * Updates timer on each animation frame
    */
   private tick(): void {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {
+      console.log('Tick called but timer not running, exiting');
+      return;
+    }
     
     const currentTime = performance.now();
     const elapsed = currentTime - this.startTime;
@@ -78,23 +91,27 @@ export class Timer {
       this.onUpdate(progress);
     }
     
-    if (progress >= 1) {
-      // Store current state before calling onComplete
-      const wasRunning = this.isRunning;
-      
-      // Call onComplete before changing isRunning state
+    if (progress >= 1 && !this.completingCycle) {
+      console.log('Timer cycle complete, progress:', progress);
+      this.completingCycle = true;
+
       if (this.onComplete) {
+        console.log('Calling onComplete');
         this.onComplete();
       }
       
-      // Only set to false if we haven't restarted in the onComplete callback
-      if (wasRunning && this.isRunning) {
+      // Check if we're still running (restart might have been called in onComplete)
+      if (this.isRunning && this.completingCycle) {
+        console.log('Stopping timer after completion');
         this.isRunning = false;
+        this.completingCycle = false;
       }
       return;
     }
     
-    this.rafId = requestAnimationFrame(() => this.tick());
+    if (this.isRunning) {
+      this.rafId = requestAnimationFrame(() => this.tick());
+    }
   }
 
   /**
@@ -126,4 +143,21 @@ export class Timer {
  */
 export function createTimer(options: TimerOptions = {}): Timer {
   return new Timer(options);
+}
+
+/**
+ * Helper function to force restart a timer safely
+ * This ensures proper cleanup and restart sequence
+ */
+export function forceRestartTimer(timer: Timer): void {
+  if (!timer) return;
+  console.log('Force restarting timer');
+  
+  // Use setTimeout to ensure async nature
+  setTimeout(() => {
+    timer.stop();
+    setTimeout(() => {
+      timer.start();
+    }, 5);
+  }, 5);
 }
