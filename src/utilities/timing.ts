@@ -104,6 +104,13 @@ export class Timer {
     if (!this.isRunning) return 0;
     return Math.min((performance.now() - this.startTime) / this.duration, 1);
   }
+  
+  /**
+   * Returns whether the timer is currently running
+   */
+  isPlaying(): boolean {
+    return this.isRunning;
+  }
 }
 
 /**

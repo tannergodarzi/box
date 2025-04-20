@@ -2,53 +2,67 @@
 
 import styles from "./page.module.css";
 import { createTimer, Timer } from "../utilities/timing";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { ProgressBar } from "./components/progressBar";
 
 export default function Home() {
-  const [progress, setProgress] = useState(0)
-  const [step, setStep] = useState(1)
-  const [playing, setPlaying] = useState(false)
-  const timerRef = useRef<null | Timer>(null);
+  const [progress, setProgress] = useState(0);
+  const [step, setStep] = useState(1);
+  const [playing, setPlaying] = useState(false);
+  const timerRef = useRef<Timer | null>(null);
   
-  timerRef.current = createTimer({
-    duration: 4000,
-    onUpdate: (progress) => {
-      setProgress(Math.ceil(progress * 100));
-    },
-    onComplete: () => {
-      setStep((step) => {
-        if (step < 4) {
-          return step + 1
-        } else {
-          return 1
+  // Create the timer only once
+  useEffect(() => {
+    timerRef.current = createTimer({
+      duration: 4000,
+      onUpdate: (progress) => {
+        setProgress(Math.ceil(progress * 100));
+      },
+      onComplete: () => {
+        setStep((step) => {
+          return step < 4 ? step + 1 : 1;
+        });
+        // Check the current playing state when deciding to restart
+        if (timerRef.current) {
+          // Only restart if still playing (check current state)
+          const isCurrentlyPlaying = timerRef.current.isPlaying();
+          if (isCurrentlyPlaying) {
+            timerRef.current.restart();
+          }
         }
-      })
+      },
+    });
+    
+    return () => {
+      // Cleanup on unmount
       if (timerRef.current) {
-        timerRef.current.restart();
+        timerRef.current.stop();
       }
-    },
-  });
+    };
+  }, []);
   
-  useLayoutEffect(() => {
-    if (timerRef.current) {
-      setPlaying(true)
-      timerRef.current?.start();
+  // Handle play state changes
+  useEffect(() => {
+    if (!timerRef.current) return;
+    
+    if (playing) {
+      timerRef.current.start();
+    } else {
+      timerRef.current.stop();
     }
+  }, [playing]);
+  
+  // Start automatically on mount
+  useLayoutEffect(() => {
+    setPlaying(true);
   }, []);
 
   function handleOnButtonClickStop() {
-    if (timerRef.current) {
-      setPlaying(false);
-      timerRef.current?.stop();
-    }
+    setPlaying(false);
   }
 
   function handleOnButtonClickStart() {
-    if (timerRef.current) {
-      setPlaying(true);
-      timerRef.current?.start();
-    }
+    setPlaying(true);
   }
   
   return (
@@ -63,13 +77,15 @@ export default function Home() {
         <div className={styles.controls}>
           <button
             onClick={handleOnButtonClickStop}
+            disabled={!playing}
           >
             Stop
           </button>
           <button
             onClick={handleOnButtonClickStart}
+            disabled={playing}
           >
-            Restart
+            Start
           </button>
         </div>
       </main>
