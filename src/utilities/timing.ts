@@ -79,9 +79,17 @@ export class Timer {
     }
     
     if (progress >= 1) {
-      this.isRunning = false;
+      // Store current state before calling onComplete
+      const wasRunning = this.isRunning;
+      
+      // Call onComplete before changing isRunning state
       if (this.onComplete) {
         this.onComplete();
+      }
+      
+      // Only set to false if we haven't restarted in the onComplete callback
+      if (wasRunning && this.isRunning) {
+        this.isRunning = false;
       }
       return;
     }

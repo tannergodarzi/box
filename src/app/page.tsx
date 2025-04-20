@@ -10,6 +10,12 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [playing, setPlaying] = useState(false);
   const timerRef = useRef<Timer | null>(null);
+  const playingRef = useRef<boolean>(false);
+  
+  // Update the ref when playing state changes
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
   
   // Create the timer only once
   useEffect(() => {
@@ -19,16 +25,11 @@ export default function Home() {
         setProgress(Math.ceil(progress * 100));
       },
       onComplete: () => {
-        setStep((step) => {
-          return step < 4 ? step + 1 : 1;
-        });
-        // Check the current playing state when deciding to restart
-        if (timerRef.current) {
-          // Only restart if still playing (check current state)
-          const isCurrentlyPlaying = timerRef.current.isPlaying();
-          if (isCurrentlyPlaying) {
-            timerRef.current.restart();
-          }
+        setStep((step) => step < 4 ? step + 1 : 1);
+        
+        // Use the ref to access the current playing state
+        if (playingRef.current && timerRef.current) {
+          timerRef.current.restart();
         }
       },
     });
@@ -75,16 +76,10 @@ export default function Home() {
           <ProgressBar width={progress * 4} paused={!playing} />
         </div>
         <div className={styles.controls}>
-          <button
-            onClick={handleOnButtonClickStop}
-            disabled={!playing}
-          >
+          <button onClick={handleOnButtonClickStop} disabled={!playing}>
             Stop
           </button>
-          <button
-            onClick={handleOnButtonClickStart}
-            disabled={playing}
-          >
+          <button onClick={handleOnButtonClickStart} disabled={playing}>
             Start
           </button>
         </div>
