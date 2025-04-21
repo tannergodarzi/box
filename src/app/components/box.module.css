@@ -1,52 +1,104 @@
 .box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  --box-width: 200px;
+  --ball-width: 32px;
+  aspect-ratio: 1 / 1;
+  width: var(--box-width);
+  border-radius: 18px;
+  background-clip: padding-box;
+  overflow: hidden;
+  box-shadow: 0 0 0 6px rgb(203, 203, 203);
+  margin: 0;
+  background: rgb(203, 203, 203);
   position: relative;
-  width: 200px;
-  height: 200px;
-  border-radius: 8px;
-  background-color: var(--background, #ffffff);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-  transition: all 0.3s ease;
 }
 
-.box.active {
-  transform: scale(1.05);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.content {
-  text-align: center;
-  color: var(--foreground, #171717);
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.phase {
+.boxContent {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: var(--foreground, #171717);
-  color: var(--background, #ffffff);
-  display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-content: center;
   justify-content: center;
+  inset: var(--ball-width);
+  text-align: center;
   font-weight: bold;
-  font-size: 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  .box {
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+.ball {
+  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  width: var(--ball-width);
+  transform-origin: 0 0;
+  transform: translate(0px, 0px);
+  background: #484848;
+}
+
+.ball.paused {
+  animation-play-state: paused !important;
+}
+
+.traverse {
+  animation: traverse 1 linear;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-duration: 4s;
+}
+
+.descend {
+  animation: descend 1 linear;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-duration: 4s;
+}
+
+.retreat {
+  animation: retreat 1 linear;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-duration: 4s;
+}
+
+.ascend {
+  animation: ascend 1 linear;
+  animation-play-state: running;
+  animation-fill-mode: forwards;
+  animation-duration: 4s;
+}
+
+@keyframes traverse {
+  0% {
+    transform: translate(0px, 0px);
   }
-  
-  .box.active {
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+
+  100% {
+    transform: translate(calc(var(--box-width) - var(--ball-width)), 0);
+  }
+}
+
+@keyframes descend {
+  0% {
+    transform: translate(calc(var(--box-width) - var(--ball-width)), 0);
+  }
+
+  100% {
+    transform: translate(calc(var(--box-width) - var(--ball-width)), calc(200px - var(--ball-width)));
+  }
+}
+
+@keyframes retreat {
+  0% {
+    transform: translate(calc(var(--box-width) - var(--ball-width)), calc(200px - var(--ball-width)));
+  }
+
+  100% {
+    transform: translate(0, calc(var(--box-width) - var(--ball-width)));
+  }
+}
+
+@keyframes ascend {
+  0% {
+    transform: translate(0, calc(var(--box-width) - var(--ball-width)));
+  }
+
+  100% {
+    transform: translate(0, 0);
   }
 }
